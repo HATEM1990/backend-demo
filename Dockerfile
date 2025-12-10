@@ -1,5 +1,22 @@
-FROM eclipse-temurin:21-jre
+# ============================
+# Stage 1: Build the JAR
+# ============================
+FROM eclipse-temurin:21-jdk AS build
+
 WORKDIR /app
-COPY target/demo-0.0.1-SNAPSHOT.jar app.jar
+COPY . .
+
+RUN ./mvnw clean package -DskipTests
+
+# ============================
+# Stage 2: Run the JAR
+# ============================
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+COPY --from=build /app/target/demo-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
