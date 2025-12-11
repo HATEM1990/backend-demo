@@ -2,49 +2,59 @@ package com.example.demo.controller;
 
 import com.example.demo.model.SafetyGoal;
 import com.example.demo.model.FunctionalSafetyRequirement;
-import com.example.demo.repo.SafetyGoalRepo;
-import com.example.demo.repo.FunctionalSafetyRequirementRepo;
 import com.example.demo.service.SafetyService;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api")   // <---- CRITICAL
+@CrossOrigin
 public class SafetyController {
 
-    private final SafetyGoalRepo sgRepo;
-    private final FunctionalSafetyRequirementRepo fsrRepo;
     private final SafetyService safetyService;
 
-    public SafetyController(SafetyGoalRepo sgRepo,
-                            FunctionalSafetyRequirementRepo fsrRepo,
-                            SafetyService safetyService) {
-        this.sgRepo = sgRepo;
-        this.fsrRepo = fsrRepo;
+    public SafetyController(SafetyService safetyService) {
         this.safetyService = safetyService;
     }
 
-    @PostMapping("/sg")
-    public SafetyGoal createSG(@RequestBody SafetyGoal sg) {
-        return sgRepo.save(sg);
-    }
-
-    @PostMapping("/fsr")
-    public FunctionalSafetyRequirement createFSR(@RequestBody FunctionalSafetyRequirement fsr) {
-        return fsrRepo.save(fsr);
-    }
-
-    @PostMapping("/link")
-    public String link(@RequestParam String sgId, @RequestParam String fsrId) {
-        safetyService.linkSGtoFSR(sgId, fsrId);
-        return "Linked SG " + sgId + " → FSR " + fsrId;
-    }
-
+    // Create SG
     @GetMapping("/sg")
-    public List<SafetyGoal> getSGs() { return sgRepo.findAll(); }
+    public SafetyGoal createSG(@RequestParam(required = false) String name,
+                               @RequestParam(required = false) String sgId) {
 
+        if (name != null) {
+            return safetyService.createSafetyGoal(name);
+        }
+        if (sgId != null) {
+            return safetyService.getSafetyGoalWithFsrs(sgId);
+        }
+        return null;
+    }
+
+    // List all SGs
+    @GetMapping("/sg/all")
+    public List<SafetyGoal> getAllSGs() {
+        return safetyService.getAllSafetyGoals();
+    }
+
+    // Create FSR
     @GetMapping("/fsr")
-    public List<FunctionalSafetyRequirement> getFSRs() { return fsrRepo.findAll(); }
+    public FunctionalSafetyRequirement createFSR(@RequestParam String name) {
+        return safetyService.createFSR(name);
+    }
+
+    // List all FSRs
+    @GetMapping("/fsr/all")
+    public List<FunctionalSafetyRequirement> getAllFSRs() {
+        return safetyService.getAllFSRs();
+    }
+
+    // Link SG ↔ FSR
+    @GetMapping("/link")
+    public String linkSgToFsr(@RequestParam String sgId,
+                              @RequestParam String fsrId) {
+        safetyService.linkSGtoFSR(sgId, fsrId);
+        return "Link created successfully";
+    }
 }
